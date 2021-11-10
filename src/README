@@ -1,0 +1,141 @@
+=== This package should also contain the following files:
+
+Makefile
+	Type "make" for constructing the "SoD" executable.
+
+SoD.c
+	The main program of the generator.
+
+defs.h
+	The main defenitions.
+
+mem.c mem.h
+	Functions for accounting memory usage.
+
+context.c context.h
+	Functions for handling the Markov models.
+
+common.c common.h
+	Functions common to both the trainning phase and the generation 
+	phase.
+
+ecK12DH10B.fa.gz
+	E. coli K12 sequence, substrain DH10B uid58979, used as an example.
+	It is in gzip fasta format.
+
+
+=== The generator has the following interface:
+
+Usage: SoD     [ -h (show this) ]
+               [ -v (verbose info) ]
+               [ -t <template> a=<n>/<d> d=<n>/<d> tr=<threshold> ]
+               [ -t <template> a=<n>/<d> d=<n>/<d> tr=<threshold> ]
+               ...
+               [ -u <template> a=<n>/<d> d=<n>/<d> tr=<threshold> ]
+               [ -u <template> a=<n>/<d> d=<n>/<d> tr=<threshold> ]
+               ...
+               [ -bs <bSize> (def: 100) ]
+               [ -bts <bTableSize> (def: 10000) ]
+               [ -n <nGenSymbols> (def: nBasesDataFile) ]
+               [ -o <genOutFile> ]
+               [ -ic (inverted complement repeats)]
+               [ -ns <nGenSequences> (def: 1) ]
+               [ -s <seed> (def: TIME(NULL)) ]
+               [ -mc <maxCount> (def: 4294967295) ]
+               [ -hs <hashSize> (def: 19999999) ]
+               [ -conf <configFile> ]
+               [ -bInfo <blockInfoFile> ]
+               <dataFile>
+
+-h
+	Help. The interface is displayed.
+
+-v
+	Verbose. Some additional information is displayed.
+
+-t <template> a=<n>/<d> d=<n>/<d> tr=<threshold>
+	Defines a context template. For example, "-t 1:6" creates a model
+	that uses the last 6 bases for context. The model is updated only
+	if it is used in the current block (i.e., if it was found to be
+	the best model for that block). The "a=<n>/<d>" parameters are 
+	optional, serving to set the alpha parameter of the probability 
+	estimator in the trainning phase. The "d=<n>/<d>" parameters are 
+	optional, serving to set the delta parameter of the probability 
+	estimator in the generation phase. The "tr=<threshold>" parameter 
+	is optional, serving to keep only the local statistics of the last 
+	"<threshold>" symbols. Default <threshold> parameter use the whole
+	past occurences of the sequence.
+	For example, "-t 1:2 a=1/1 d=1/10 tr=500" means that the context is 
+	the last two bases, the probability estimates of that model in the 
+	trainning phase are computed using alpha=1, the probability 
+	estimates of that model in the generation phase are computed using 
+	delta=0.1, and the model only keep the statistics form the last 500 
+	bases.
+
+-u <template> a=<n>/<d> d=<n>/<d> tr=<threshold> (update always)
+	The same as the "-t" flag, but in this case the model in the 
+	trainning phase is always updated, even when it was not used in the 
+	current block.
+
+-bs <bSize> (default: 100 bases)
+	The size of the block in number of bases.
+
+-bts <bTableSize> (default: 10000 bases)
+	The size of the block table (score matrix) that stores the number of 
+	selections of a certain block size (variable) with a certain Markov 
+	model.
+
+-n <nGenSymbols> (default: number of base from the trainning file)
+	The number of generated bases.
+
+-o <genOutFile>
+	If present, it writes the generated sequence in file "genOutFile".
+
+-ic (update inverted complement repeats)
+	Is an optional parameter. Uses the mechanism for updating also the 
+	context corresponding to the inverted complement of the original 
+	context.
+
+-ns <nGenSequences> (Default: 1)
+	Number of synthetic sequences to generate.
+
+-s <seed> (default: TIME(NULL))
+	Seed to initilize pseudo-random function.
+
+-mc <maxCount> (default: 4294967295)
+	Establishes the maximum value allowed in the context counters, which,
+	by default, is the maximum capacity of the counters. When a counter
+	reaches this value, all counters of the context are divided by 2.
+
+-hs <hashSize> (default: 19999999)
+	The size of the hash-table.
+	
+-conf <configFile>
+	A configuration file with parameters. The '#' symbol in the beggining
+	of the line will create an uninterpreted line (comment line).
+
+-bInfo <blockInfoFile>
+	A file with the block table (score matrix) information.
+
+<dataFile>
+	The trainning sequence file: a DNA sequence file in fasta or in gzip 
+	fasta format.
+
+
+=== Example
+
+shell prompt> SoD -v -u 1:6 a=1/1 d=1/1000 -u 1:15 a=1/20 d=1/1000000 -o SyntheticEcoli ecK12DH10B.fa.gz
+Needed 0.11 s for counting the bases
+Evaluating 4686135 bases
+Creating 4096 probability models (template size: 6, alpha: 1/1, delta = 1/1000)
+Creating 1073741824 probability models (template size: 15, alpha: 1/20, delta = 1/1000000)
+Using blocks of 100 bases (46862 blocks)
+Needed 3.85 s for evaluation
+Block table size: 10000
+Generating 4686135 bases
+Using seed: 1335285918
+Done!
+Needed 1.17 s for generation
+Total memory: 415.5 MB
+Total time: 5.02 s
+
